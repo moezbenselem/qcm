@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_consult"
+            android:icon="@drawable/consult"
+            android:title="Consulter les QCM" />
+        <item
+            android:id="@+id/nav_hist"
+            android:icon="@drawable/histo"
+            android:title="Consulter votre historique" />
+        <item
+            android:id="@+id/nav_creer"
+            android:icon="@drawable/create"
+            android:title="Créer un QCM" />
+        <item
+            android:id="@+id/nav_valider"
+            android:icon="@drawable/user"
+            android:title="Valider Compte" />
+    </group>
+
+    <item android:title="Compte">
+        <menu>
+            <item
+                android:id="@+id/nav_config"
+                android:icon="@drawable/config"
+                android:title="Configurer Compte" />
+            <item
+                android:id="@+id/nav_disconnect"
+                android:icon="@drawable/deconnecter"
+                android:title="Déconnecter" />
+        </menu>
+    </item>
+
+</menu>

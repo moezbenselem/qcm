@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal">
+
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/password"
+            android:hint="ancien mot de passe"
+            android:inputType="textPassword"
+            android:layout_above="@+id/newpassword"
+            android:layout_alignParentStart="true" />
+
+        <Button
+            android:layout_width="212dp"
+            android:layout_height="wrap_content"
+            android:text="Confirmer"
+            android:id="@+id/btConfirmerPSW"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:background="#9e2424"
+            android:textColor="#ffffff"
+            android:textSize="20dp"
+            android:layout_marginBottom="51dp" />
+
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/newpassword"
+            android:hint="nouveau mot de passe"
+            android:inputType="textPassword"
+            android:layout_above="@+id/newpassword2"
+            android:layout_alignParentStart="true" />
+
+        <EditText
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/newpassword2"
+            android:hint="confirmer votre mot de passe"
+            android:inputType="textPassword"
+            android:layout_above="@+id/btConfirmerPSW"
+            android:layout_centerHorizontal="true" />
+
+        <Button
+            android:layout_width="212dp"
+            android:layout_height="wrap_content"
+            android:text="sauvegarde"
+            android:id="@+id/sauvegarde"
+            android:background="#9e2424"
+            android:textColor="#ffffff"
+            android:textSize="20dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true" />
+
+    </RelativeLayout>
+
+
+</LinearLayout>
