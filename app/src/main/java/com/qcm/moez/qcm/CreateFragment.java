@@ -21,13 +21,27 @@ import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Moez on 10/11/2017.
@@ -45,11 +59,14 @@ public class CreateFragment extends Fragment {
     Button btSuiv,btGenerer;
     List<RowItem> rowItems;
     CustumLvAdapter adapter;
-    EditText etNbr , etNbrQ ,etTitre , etDesc ,etQuest;
-    int nbr =0 , idQcm , idQuest;
+    EditText etNbr , etNbrQ ,etTitre , etDesc ,etQuest,et;
+    int nbr =0 , idQcm , idQuest , num_rep = 0;;
     private ArrayList<String> ids,Titles,Resultats,nomEns,Dates;
     SharedPreferences sharedPref;
     int indice=0;
+    SharedPreferences.Editor editor;
+    RelativeLayout rl;
+
 
     @Nullable
     @Override
@@ -67,8 +84,8 @@ public class CreateFragment extends Fragment {
         nomEns = new ArrayList<String>();
         Dates = new ArrayList<String>();
         bundle = getArguments();
-        final SharedPreferences.Editor editor;
-        final RelativeLayout rl = (RelativeLayout)getView().findViewById(R.id.rl_QCM);
+
+        rl = (RelativeLayout)getView().findViewById(R.id.rl_QCM);
         btSuiv = (Button)getView().findViewById(R.id.btSuivCreation);
         btGenerer = (Button)getView().findViewById(R.id.btGenerer);
         listView = (ListView)getView().findViewById(R.id.listView);
@@ -76,7 +93,7 @@ public class CreateFragment extends Fragment {
         etNbr = (EditText)getView().findViewById(R.id.etNbr);
 
         sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
-
+        editor = sharedPref.edit();
 
         btGenerer.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -105,7 +122,7 @@ public class CreateFragment extends Fragment {
         });
 
         System.out.println("TAAAAAAGGGG ==== "+btSuiv.getTag().toString());
-        editor = sharedPref.edit();
+
         btSuiv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -119,38 +136,19 @@ public class CreateFragment extends Fragment {
                         etNbrQ = (EditText) getView().findViewById(R.id.etnbrq);
 
                         titre = etTitre.getText().toString();
-                        titre = titre.replaceAll(" ", "(");
+
                         desc = etDesc.getText().toString();
-                        desc = desc.replaceAll(" ", "(");
+
                         nbr = Integer.parseInt(etNbrQ.getText().toString());
 
                         id_ens = sharedPref.getString("idUser", "");
                         rl.setVisibility(View.GONE);
-                        System.out.println("http://qcmtest.6te.net/qcm/insert_qcm.php?titre=\"" + titre + "\"&desc=\"" + desc + "\"&id_ens=\"" + id_ens+"\"");
                     }
                     catch (Exception exep){
                         exep.printStackTrace();
                     }
-                    Ion.with(getContext())
-                            .load("http://qcmtest.6te.net/qcm/insert_qcm.php?titre=\"" + titre + "\"&desc=\"" + desc + "\"&id_ens=\"" + id_ens+"\"")
-                            .asJsonObject()
-                            .setCallback(new FutureCallback<JsonObject>() {
-                                @Override
-                                public void onCompleted(Exception e, JsonObject result) {
-                                    if (e == null) {
-                                        String r = result.get("last_id").toString().replaceAll("\"", "");
-                                        idQcm = Integer.parseInt(r);
 
-                                        editor.putInt("idq",idQcm);
-                                        editor.apply();
-                                        System.out.println("IDQCM == "+idQcm);
-                                    }
-                                    else {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            });
-
+                    addQCM();
                     btSuiv.setTag("suiv");
 
                 }
@@ -165,9 +163,8 @@ public class CreateFragment extends Fragment {
                             System.out.println("indice dans if === "+indice);
                             etQuest = (EditText) getView().findViewById(R.id.etQuestion);
                             quest = etQuest.getText().toString();
-                            quest = quest.replaceAll(" ", "(");
                             id_ens = sharedPref.getString("idUser", "");
-                            int num_rep = 0;
+                            num_rep = 0;
                             for (int i = 0; i < listView.getAdapter().getCount(); i++) {
                                 View vi = listView.getChildAt(i);
                                 EditText et = (EditText) vi.findViewById(R.id.etSugg);
@@ -178,63 +175,21 @@ public class CreateFragment extends Fragment {
 
 
                             System.out.println("http://qcmtest.6te.net/qcm/insert_quest.php?quest=\"" + quest + "\"&id_exam=\"" + idQcm + "\"&num_rep=\"" + num_rep + "\"");
-                            Ion.with(getContext())
-                                    .load("http://qcmtest.6te.net/qcm/insert_quest.php?quest=\"" + quest + "\"&id_exam=" + idQcm + "&num_rep=" + num_rep + "")
-                                    .asJsonObject()
-                                    .setCallback(new FutureCallback<JsonObject>() {
-                                        @Override
-                                        public void onCompleted(Exception e, JsonObject result) {
-                                            if (e == null) {
-                                                String r = result.get("last_id").toString().replaceAll("\"", "");
-                                                idQuest = Integer.parseInt(r);
-
-                                                editor.putInt("idquset", idQuest);
-                                                editor.apply();
-                                                System.out.println("IDQUEST == " + idQuest);
-                                            } else {
-                                                e.printStackTrace();
-                                            }
-                                        }
-                                    });
-
+                            addQuest();
 
                             for (int i = 0; i < listView.getAdapter().getCount(); i++) {
 
                                 View vi = listView.getChildAt(i);
-                                EditText et = (EditText) vi.findViewById(R.id.etSugg);
+                                et = (EditText) vi.findViewById(R.id.etSugg);
                                 CheckBox ch = (CheckBox) vi.findViewById(R.id.checkSugg);
                                 if (ch.isChecked()) {
                                     //System.out.println(et.getText().toString());
                                     System.out.println("http://qcmtest.6te.net/qcm/insert_prop.php?id_quest=" + idQuest + "&id_exam=" + idQcm + "&type=" + 1 + "&rep=" + et.getText().toString());
-                                    Ion.with(getContext())
-                                            .load("http://qcmtest.6te.net/qcm/insert_prop.php?id_quest=" + idQuest + "&id_exam=" + idQcm + "&type=" + 1 + "&rep=" + et.getText().toString())
-                                            .asJsonObject()
-                                            .setCallback(new FutureCallback<JsonObject>() {
-                                                @Override
-                                                public void onCompleted(Exception e, JsonObject result) {
-                                                    if (e == null) {
-                                                        System.out.println("effectuee !!!!");
-                                                    } else {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            });
+                                    addPropo("1");
                                 } else {
 
                                     System.out.println("http://qcmtest.6te.net/qcm/insert_prop.php?id_quest=" + idQuest + "&id_exam=" + idQcm + "&type=" + 0 + "&rep=" + et.getText().toString());
-                                    Ion.with(getContext())
-                                            .load("http://qcmtest.6te.net/qcm/insert_prop.php?id_quest=" + idQuest + "&id_exam=" + idQcm + "&type=" + 0 + "&rep=" + et.getText().toString())
-                                            .asJsonObject()
-                                            .setCallback(new FutureCallback<JsonObject>() {
-                                                @Override
-                                                public void onCompleted(Exception e, JsonObject result) {
-                                                    if (e == null) {
-                                                        System.out.println("effectuee !!!!");
-                                                    } else {
-                                                        e.printStackTrace();
-                                                    }
-                                                }
-                                            });
+                                    addPropo("0");
                                 }
 
                                 //FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -278,4 +233,187 @@ public class CreateFragment extends Fragment {
 
     }
 
+    public void addQCM(){
+
+        try {
+            final StringRequest stringRequest = new StringRequest(Request.Method.POST,"http://qcmtest.6te.net/qcm/insert_qcm.php",
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+
+                            if (response.indexOf("/div>") != -1)
+                                response = response.substring(response.lastIndexOf("/div>") + 5);
+
+                            System.out.println("result === \n" + response);
+
+                            try {
+
+                                JSONObject result = new JSONObject(response);
+                                String r = result.get("last_id").toString().replaceAll("\"", "");
+                                idQcm = Integer.parseInt(r);
+
+                                editor.putInt("idq",idQcm);
+                                editor.apply();
+                                System.out.println("IDQCM == "+idQcm);
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(getContext(), "No internet connection", Toast.LENGTH_LONG).show();
+
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+
+                    Map<String, String> params = new Hashtable<>();
+                    params.put("titre",titre);
+                    params.put("desc",desc);
+                    params.put("id_ens",id_ens);
+                    return params;
+                }
+            };
+
+            {
+                int socketTimeout = 30000;
+                RetryPolicy policy = new DefaultRetryPolicy(socketTimeout, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+                stringRequest.setRetryPolicy(policy);
+                RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+                requestQueue.add(stringRequest);
+            }
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+
+
+    }
+
+
+    public void addQuest(){
+
+        try {
+            final StringRequest stringRequest = new StringRequest(Request.Method.POST,"http://qcmtest.6te.net/qcm/insert_quest.php",
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+
+                            if (response.indexOf("/div>") != -1)
+                                response = response.substring(response.lastIndexOf("/div>") + 5);
+
+                            System.out.println("result === \n" + response);
+
+                            try {
+
+                                JSONObject result = new JSONObject(response);
+                                String r = result.get("last_id").toString().replaceAll("\"", "");
+                                idQuest = Integer.parseInt(r);
+
+                                editor.putInt("idquset", idQuest+1);
+                                editor.apply();
+                                System.out.println("IDQUEST == " + idQuest);
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(getContext(), "No internet connection", Toast.LENGTH_LONG).show();
+
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+
+                    Map<String, String> params = new Hashtable<>();
+                    params.put("quest",quest);
+                    params.put("num_rep",num_rep+"");
+                    params.put("id_exam",idQcm+"");
+                    return params;
+                }
+            };
+
+            {
+                int socketTimeout = 30000;
+                RetryPolicy policy = new DefaultRetryPolicy(socketTimeout, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+                stringRequest.setRetryPolicy(policy);
+                RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+                requestQueue.add(stringRequest);
+            }
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+
+
+    }
+
+
+    public void addPropo(final String t){
+
+        try {
+            final StringRequest stringRequest = new StringRequest(Request.Method.POST,"http://qcmtest.6te.net/qcm/insert_prop.php",
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+
+                            if (response.indexOf("/div>") != -1)
+                                response = response.substring(response.lastIndexOf("/div>") + 5);
+
+                            System.out.println("result === \n" + response);
+
+                            try {
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(getContext(), "No internet connection", Toast.LENGTH_LONG).show();
+
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+
+                    Map<String, String> params = new Hashtable<>();
+
+                    idQuest = sharedPref.getInt("idquset",0);
+                    params.put("id_quest",idQuest+"");
+                    params.put("type",t);
+                    params.put("rep",et.getText().toString());
+                    params.put("id_exam",idQcm+"");
+                    return params;
+
+                }
+            };
+
+            {
+                int socketTimeout = 30000;
+                RetryPolicy policy = new DefaultRetryPolicy(socketTimeout, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+                stringRequest.setRetryPolicy(policy);
+                RequestQueue requestQueue = Volley.newRequestQueue(getContext());
+                requestQueue.add(stringRequest);
+            }
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+
+
+    }
+
+
 }
+

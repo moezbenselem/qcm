@@ -8,6 +8,7 @@
     tools:context="com.qcm.moez.qcm.MainActivity"
     tools:showIn="@layout/app_bar_main"
     android:id="@+id/content_main"
+    android:animateLayoutChanges="true"
     >
 
 </android.support.constraint.ConstraintLayout>

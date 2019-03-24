@@ -6,38 +6,59 @@
     android:layout_marginRight="5dp"
     android:layout_marginTop="5dp"
     android:weightSum="1"
+    android:animateLayoutChanges="true"
     android:id="@+id/mainLayout">
+
     <RelativeLayout
         android:id="@+id/loadingPanel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center" >
+        android:gravity="center"
+        android:visibility="gone">
 
         <ProgressBar
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:indeterminate="true" />
     </RelativeLayout>
+
+    <TextView
+        android:id="@+id/labelques"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Question :"
+        android:layout_marginBottom="5dp"
+        />
+
     <TextView
         android:id="@+id/tvQuest"
         android:layout_width="match_parent"
-        android:layout_height="206dp"
-        android:layout_weight="0.35"
+        android:layout_height="200dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
         android:layout_marginTop="5dp"
-
+        android:layout_weight="0.35"
         android:textAppearance="@style/TextAppearance.AppCompat.Large" />
+
+
+    <TextView
+        android:id="@+id/labelRep"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Choisir la bonne réponse :"
+        />
 
     <LinearLayout
         android:id="@+id/layoutRep"
         android:layout_width="match_parent"
-        android:layout_height="198dp"
+        android:layout_height="200dp"
         android:layout_marginLeft="5dp"
         android:layout_marginRight="5dp"
-        android:layout_marginTop="20dp"
-        android:orientation="horizontal"
-        android:layout_weight="0.54"></LinearLayout>
+        android:layout_marginTop="5dp"
+        android:layout_weight="0.54"
+        android:orientation="horizontal">
+
+    </LinearLayout>
 
     <RelativeLayout
         android:layout_width="wrap_content"
