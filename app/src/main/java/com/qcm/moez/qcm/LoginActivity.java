@@ -12,19 +12,34 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.RetryPolicy;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.koushikdutta.async.future.FutureCallback;
 import com.koushikdutta.ion.Ion;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Map;
 
 public class LoginActivity extends AppCompatActivity {
 
 
-    private ArrayList<String> ids,noms,prenoms,psw,type,etat;
+
+    ArrayList<Account> listUsers;
     EditText etLogin,etPsw;
     Button btCon,btInsc;
     SharedPreferences sharedPref;
@@ -48,82 +63,10 @@ public class LoginActivity extends AppCompatActivity {
                 startActivity(intent);
 
             } else {
-                ids = new ArrayList<String>();
-                noms = new ArrayList<String>();
-                prenoms = new ArrayList<String>();
 
-                psw = new ArrayList<String>();
-                type = new ArrayList<String>();
-                etat = new ArrayList<String>();
+                listUsers = new ArrayList<>();
 
-                Ion.with(this)
-                        .load("http://qcmtest.6te.net/qcm/liste_ens_login.php?db=qcm")
-                        .asJsonArray()
-                        .setCallback(new FutureCallback<JsonArray>() {
-                            @Override
-                            public void onCompleted(Exception e, JsonArray result) {
-                                System.out.println("ION Consult liste ens");
-
-                                if (e == null) {
-                                    System.out.println("result ens =====" + result);
-                                    System.out.println("result ens size =====" + result.size());
-                                    if (result.size() == 0) {
-                                        System.out.println("result ens size =====" + result.size());
-                                    } else {
-
-
-                                        for (int i = 0; i < result.size(); i++) {
-                                            JsonObject obj = (JsonObject) result.get(i);
-                                            //Log.e("name :", "" + obj.get("name"));
-
-                                            String idR = obj.get("id").toString().replaceAll("\"", "");
-                                            String nomR = obj.get("nom").toString().replaceAll("\"", "");
-                                            String prenomR = obj.get("prenom").toString().replaceAll("\"", "");
-                                            String loginR = obj.get("id").toString().replaceAll("\"", "");
-                                            String mdpR = obj.get("psw").toString().replaceAll("\"", "");
-                                            String etatR = obj.get("etat").toString().replaceAll("\"", "");
-                                            String typeR = obj.get("type").toString().replaceAll("\"", "");
-
-                                            ids.add(idR);
-                                            noms.add(nomR);
-                                            prenoms.add(prenomR);
-                                            psw.add(mdpR);
-                                            etat.add(etatR);
-                                            type.add(typeR);
-
-                                        }
-                                        System.out.println(psw);
-
-
-                                        //findViewById(R.id.loadingPanel).setVisibility(View.GONE);
-
-                                        System.out.println("lesss nommmssss");
-                                        //System.out.println(noms);
-
-                                    }
-                                } else
-                                {
-                                    e.printStackTrace();
-
-                                    new AlertDialog.Builder(LoginActivity.this).setTitle("Erreur")
-                                            .setMessage("Une erreur serveur est survenue !\nVérifier votre connexion !").setPositiveButton("Réssayer", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-
-                                            LoginActivity.this.recreate();
-
-                                        }
-                                    }).setNegativeButton("Quittez", new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-
-                                            LoginActivity.this.finish();
-                                        }
-                                    }).show();
-                                }
-                            }
-                        });
-
+                getUsers();
 
                 etLogin = (EditText) findViewById(R.id.etLogin);
                 etPsw = (EditText) findViewById(R.id.etPsw);
@@ -145,32 +88,37 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View v) {
 
+                        System.out.println("list users size main = "+listUsers.size());
+
                         String LOGIN = etLogin.getText().toString();
                         String PSW = etPsw.getText().toString();
                         String Sha1PSW = sha1(PSW);
                         System.out.println("encrypted ======= "+Sha1PSW);
 
-                        if (ids.indexOf(LOGIN) != -1 && psw.indexOf(Sha1PSW) != -1) {
-                            int pos = ids.indexOf(LOGIN);
-                            if (LOGIN.equals(ids.get(pos))) {
-                                if (Sha1PSW.equals(psw.get(pos))) {
-                                    if (etat.get(pos).equals("0")) {
+
+                        Account account = findAccount(LOGIN);
+
+                        if (account!= null && account.psw != null) {
+
+
+                                if (Sha1PSW.equals(account.psw)) {
+                                    if (account.etat.equals("0")) {
                                         Toast.makeText(getApplicationContext(), "Ce Compte est en cours de Vérification !", Toast.LENGTH_LONG).show();
                                     } else {
                                         Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-                                        intent.putExtra("id_user", ids.get(pos));
-                                        intent.putExtra("nom", noms.get(pos));
-                                        intent.putExtra("prenom", prenoms.get(pos));
-                                        intent.putExtra("etat", etat.get(pos));
-                                        intent.putExtra("type", type.get(pos));
+                                        intent.putExtra("id_user", account.id);
+                                        intent.putExtra("nom", account.nom);
+                                        intent.putExtra("prenom", account.prenom);
+                                        intent.putExtra("etat", account.etat);
+                                        intent.putExtra("type", account.type);
 
                                         SharedPreferences.Editor editor = sharedPref.edit();
                                         editor.putBoolean("connected", true);
-                                        editor.putString("Nom", noms.get(pos));
-                                        editor.putString("Prenom", prenoms.get(pos));
-                                        editor.putString("Password", psw.get(pos));
-                                        editor.putString("idUser", ids.get(pos));
-                                        editor.putString("Type", type.get(pos));
+                                        editor.putString("Nom", account.nom);
+                                        editor.putString("Prenom", account.prenom);
+                                        editor.putString("Password", account.psw);
+                                        editor.putString("idUser", account.id);
+                                        editor.putString("Type", account.type);
                                         editor.apply();
 
                                         startActivity(intent);
@@ -180,11 +128,13 @@ public class LoginActivity extends AppCompatActivity {
                                 } else {
                                     Toast.makeText(getApplicationContext(), "Mot de Passe Incorrecte !", Toast.LENGTH_LONG).show();
                                 }
-                            }
+
 
                         } else {
                             Toast.makeText(getApplicationContext(), "Ce Compte n'existe pas !", Toast.LENGTH_LONG).show();
                         }
+
+
                     }
                 });
             }
@@ -214,6 +164,119 @@ public class LoginActivity extends AppCompatActivity {
 
         }
         return "";
+    }
+
+
+    Account findAccount(String id){
+
+        Account a = null;
+        for(int i=0;i<listUsers.size();i++){
+            if(id.equals(listUsers.get(i).id)){
+                a = listUsers.get(i);
+                break;
+            }
+        }
+        return a;
+    }
+
+
+    private void getUsers() {
+        try {
+            final StringRequest stringRequest = new StringRequest(Request.Method.GET, "http://qcmtest.6te.net/qcm/liste_ens_login.php?db=qcm",
+                    new Response.Listener<String>() {
+                        @Override
+                        public void onResponse(String response) {
+
+                            if (response.indexOf("/div>") != -1)
+                                response = response.substring(response.lastIndexOf("/div>") + 5);
+
+                            System.out.println("result === \n" + response);
+
+                            try {
+
+                                System.out.println("Consult liste users");
+
+                                JSONArray result = new JSONArray(response);
+
+
+
+                                for (int i = 0; i < result.length(); i++) {
+                                    JSONObject obj = (JSONObject) result.get(i);
+                                    //Log.e("name :", "" + obj.get("name"));
+
+                                    String idR = obj.get("id").toString().replaceAll("\"", "");
+                                    String nomR = obj.get("nom").toString().replaceAll("\"", "");
+                                    String prenomR = obj.get("prenom").toString().replaceAll("\"", "");
+                                    String loginR = obj.get("id").toString().replaceAll("\"", "");
+                                    String mdpR = obj.get("psw").toString().replaceAll("\"", "");
+                                    String etatR = obj.get("etat").toString().replaceAll("\"", "");
+                                    String typeR = obj.get("type").toString().replaceAll("\"", "");
+
+                                    Account user = new Account(idR,nomR,prenomR,mdpR,etatR,typeR);
+                                    listUsers.add(user);
+
+                                }
+
+                                System.out.println("list users size = "+listUsers.size());
+
+
+                            } catch (Exception e) {
+                                e.printStackTrace();
+
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            new AlertDialog.Builder(LoginActivity.this).setTitle("Erreur")
+                                    .setMessage("Une erreur serveur est survenue !\nVérifier votre connexion !").setPositiveButton("Réssayer", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    LoginActivity.this.recreate();
+
+                                }
+                            }).setNegativeButton("Quittez", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                    LoginActivity.this.finish();
+                                }
+                            }).show();
+
+                        }
+                    }) {
+                @Override
+                protected Map<String, String> getParams() throws AuthFailureError {
+
+                    Map<String, String> params = new Hashtable<>();
+
+                    return params;
+                }
+            };
+
+            {
+                int socketTimeout = 30000;
+                RetryPolicy policy = new DefaultRetryPolicy(socketTimeout, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT);
+                stringRequest.setRetryPolicy(policy);
+                final RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+                requestQueue.add(stringRequest);
+                requestQueue.addRequestFinishedListener(new RequestQueue.RequestFinishedListener<Object>() {
+
+                    @Override
+                    public void onRequestFinished(Request<Object> request) {
+
+                        System.out.println("request finished !");
+
+                    }
+                });
+            }
+        } catch (Exception exp) {
+            exp.printStackTrace();
+        }
+
     }
 
 
